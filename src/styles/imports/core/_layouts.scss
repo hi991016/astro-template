@@ -1,0 +1,72 @@
+/* Layouts
+------------------------------------------------------------*/
+@use "@/styles/imports/core/mixins" as *;
+
+@-ms-viewport {
+  width: device-width;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  margin: auto;
+  background: var(--main-bg-cl);
+  color: var(--main-text-cl);
+  font-family: var(--main-fonts);
+  font-weight: 400;
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: 0;
+  position: relative;
+  overflow-x: hidden;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  &::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: var(--white-cl);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s linear;
+  }
+
+  &.fadeout::after {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+main {
+  flex: 1;
+}
+
+::selection {
+  background: #dcdcdc;
+  color: #000;
+}

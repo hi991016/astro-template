@@ -1,0 +1,123 @@
+---
+// ===== PROPS =====
+interface Props {
+  title: string
+  description?: string
+  keywords?: string
+  ogLocale?: string
+  ogType?: string
+  ogSiteName?: string
+  ogImage?: string
+  canonical?: string
+  lang?: string
+  typekitId?: string
+}
+
+const {
+  title,
+  description = '',
+  keywords = 'branding design, ux/ui design, front-end, web design, web development, phu nguyen, hi991016, creative design, creative dev, art direction, agency, studio, storytelling',
+  ogLocale = 'ja_JP',
+  ogType = 'website',
+  ogSiteName = '',
+  ogImage = '',
+  canonical = '',
+  lang = 'ja',
+  typekitId = 'KID_ID_HERE'
+} = Astro.props
+
+const hasTypekit = typekitId && typekitId !== 'KID_ID_HERE'
+const siteNameResolved = ogSiteName || title
+
+// ===== IMPORTS =====
+import '@/styles/style.scss'
+import { ClientRouter } from 'astro:transitions';  
+import Header from '@/components/Header.astro'
+import Footer from '@/components/Footer.astro'
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+
+    <!-- @meta -->
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={siteNameResolved} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:url" content={canonical} />
+
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" href="/favicon.ico" />
+
+    <!-- @adobe fonts -->
+    {
+      hasTypekit && (
+        <>
+          	<link rel="preconnect" href="https://use.typekit.net" crossorigin="" />
+          	<link rel="preconnect" href="https://p.typekit.net" crossorigin="" />
+			<script is:inline define:vars={{ typekitId }}>
+			/* eslint-disable */
+				;(function (d) {
+					var config = { kitId: typekitId, scriptTimeout: 3000, async: true },
+					h = d.documentElement,
+					t = setTimeout(function () {
+						h.className = h.className.replace(/\bwf-loading\b/g, '') + ' wf-inactive'
+					}, config.scriptTimeout),
+					tk = d.createElement('script'),
+					f = false,
+					s = d.getElementsByTagName('script')[0],
+					a
+					h.className += ' wf-loading'
+					tk.src = 'https://use.typekit.net/' + config.kitId + '.js'
+					tk.async = true
+					tk.onload = tk.onreadystatechange = function () {
+					a = this.readyState
+					if (f || (a && a != 'complete' && a != 'loaded')) return
+					f = true
+					clearTimeout(t)
+					try {
+						Typekit.load(config)
+					} catch (e) {}
+					}
+					s.parentNode.insertBefore(tk, s)
+				})(document)
+				/* eslint-enable */
+			</script>
+        </>
+      )
+    }
+
+    <title>{title}</title>
+  </head>
+
+  <body>
+    <ClientRouter fallback="animate" />
+    <div id="page-transition-overlay"></div>
+
+    <!-- @header -->
+    <Header />
+    <!-- @@header -->
+
+    <!-- @main -->
+    <slot />
+    <!-- @@main -->
+
+    <!-- @footer -->
+    <Footer />
+    <!-- @@footer -->
+
+    <!-- @script -->
+    <script>
+      import '@/app.js'
+    </script>
+  </body>
+</html>
