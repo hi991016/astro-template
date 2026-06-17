@@ -25,6 +25,7 @@ const {
 const hasTypekit = typekitId && typekitId !== 'KID_ID_HERE'
 const siteNameResolved = ogSiteName || title
 const canonical = Astro.url.href.replace(/\/$/, '')
+const page = Astro.url.pathname === '/' ? 'home' : Astro.url.pathname.replace(/\//g, '')
 
 // ===== IMPORTS =====
 import '@/styles/style.scss'
@@ -98,7 +99,7 @@ import { ClientRouter } from 'astro:transitions';
     <ClientRouter fallback="none" />
   </head>
 
-  <body>
+  <body data-page={page}>
     <!-- @header -->
     <Header />
     <!-- @@header -->
