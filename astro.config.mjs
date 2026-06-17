@@ -1,11 +1,19 @@
 // @ts-check
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { defineConfig } from 'astro/config'
+import sitemap from '@astrojs/sitemap'
 
 const srcDir = fileURLToPath(new URL('./src/', import.meta.url))
 
-// https://astro.build/config
 export default defineConfig({
+  base: '/',
+  site: 'https://yourdomain.com',
+  integrations: [sitemap()],
+  trailingSlash: 'ignore',
+  scopedStyleStrategy: 'where',
+  build: {
+    inlineStylesheets: 'auto'
+  },
   vite: {
     resolve: {
       alias: {
@@ -15,8 +23,6 @@ export default defineConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          // Vite's `resolve.alias` isn't reliable for `@use`/`@import` in Sass,
-          // so resolve `@/...` ourselves via a custom Sass importer.
           importers: [
             {
               findFileUrl(url) {
@@ -27,13 +33,16 @@ export default defineConfig({
           ]
         }
       }
+    },
+    build: {
+      rollupOptions: {}
     }
   },
-
-  // prefetch links as they enter the viewport
-  // pairs with <ClientRouter /> for near-instant page swaps
   prefetch: {
-    prefetchAll: true,
+    // prefetchAll: true,
     defaultStrategy: 'viewport'
+  },
+  devToolbar: {
+    enabled: false
   }
 })
