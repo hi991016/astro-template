@@ -64,31 +64,32 @@ import { ClientRouter } from 'astro:transitions';
           <link rel="preconnect" href="https://use.typekit.net" crossorigin="" />
           <link rel="preconnect" href="https://p.typekit.net" crossorigin="" />
           <script is:inline define:vars={{ typekitId }}>
-          /* eslint-disable */
-            ;(function (d) {
-              var config = { kitId: typekitId, scriptTimeout: 3000, async: true },
-              h = d.documentElement,
-              t = setTimeout(function () {
-                h.className = h.className.replace(/\bwf-loading\b/g, '') + ' wf-inactive'
-              }, config.scriptTimeout),
-              tk = d.createElement('script'),
-              f = false,
-              s = d.getElementsByTagName('script')[0],
-              a
-              h.className += ' wf-loading'
-              tk.src = 'https://use.typekit.net/' + config.kitId + '.js'
-              tk.async = true
-              tk.onload = tk.onreadystatechange = function () {
-              a = this.readyState
-              if (f || (a && a != 'complete' && a != 'loaded')) return
-              f = true
-              clearTimeout(t)
-              try {
-                Typekit.load(config)
-              } catch (e) {}
-              }
-              s.parentNode.insertBefore(tk, s)
-            })(document)
+            /* eslint-disable */
+            (function (d) {
+              var config = {
+                kitId: typekitId,
+                scriptTimeout: 3000,
+                active: function () { window.__fontsReady && window.__fontsReady.resolve() },
+                inactive: function () {
+                  window.__fontsReady && window.__fontsReady.resolve()
+                  document.fonts && document.fonts.ready.then(function () {
+                    var html = d.documentElement
+                    if (html.classList.contains('wf-active')) return
+                    html.classList.remove('wf-inactive', 'wf-loading')
+                    html.classList.add('wf-active')
+                  })
+                },
+                async: true
+              },
+                h = d.documentElement, t = setTimeout(function () { h.className = h.className.replace(/\bwf-loading\b/g, "") + " wf-inactive"; }, config.scriptTimeout), tk = d.createElement("script"), f = false, s = d.getElementsByTagName("script")[0], a; h.className += " wf-loading"; tk.src = 'https://use.typekit.net/' + config.kitId + '.js'; tk.async = true; tk.onload = tk.onreadystatechange = function () { a = this.readyState; if (f || a && a != "complete" && a != "loaded") return; f = true; clearTimeout(t); try { Typekit.load(config) } catch (e) { } }; s.parentNode.insertBefore(tk, s)
+            })(document);
+
+            window.__fontsReady = (function () {
+              var res
+              var p = new Promise(function (resolve) { res = resolve })
+              p.resolve = res
+              return p
+            })()
             /* eslint-enable */
           </script>
         </>
