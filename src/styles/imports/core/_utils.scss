@@ -12,6 +12,26 @@ img.lazy {
   }
 }
 
+/* page transtion */
+[data-transition-screen] {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  overflow: hidden;
+
+  &.is-blocking {
+    pointer-events: auto;
+  }
+
+  [data-transition-inner] {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    will-change: transform;
+  }
+}
+
 /* only device */
 [hidden],
 [data-sp-only] {

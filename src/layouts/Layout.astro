@@ -62,47 +62,45 @@ import Footer from '@/components/Footer.astro'
     {
       hasTypekit && (
         <>
-          	<link rel="preconnect" href="https://use.typekit.net" crossorigin="" />
-          	<link rel="preconnect" href="https://p.typekit.net" crossorigin="" />
-			<script is:inline define:vars={{ typekitId }}>
-			/* eslint-disable */
-				;(function (d) {
-					var config = { kitId: typekitId, scriptTimeout: 3000, async: true },
-					h = d.documentElement,
-					t = setTimeout(function () {
-						h.className = h.className.replace(/\bwf-loading\b/g, '') + ' wf-inactive'
-					}, config.scriptTimeout),
-					tk = d.createElement('script'),
-					f = false,
-					s = d.getElementsByTagName('script')[0],
-					a
-					h.className += ' wf-loading'
-					tk.src = 'https://use.typekit.net/' + config.kitId + '.js'
-					tk.async = true
-					tk.onload = tk.onreadystatechange = function () {
-					a = this.readyState
-					if (f || (a && a != 'complete' && a != 'loaded')) return
-					f = true
-					clearTimeout(t)
-					try {
-						Typekit.load(config)
-					} catch (e) {}
-					}
-					s.parentNode.insertBefore(tk, s)
-				})(document)
-				/* eslint-enable */
-			</script>
+          <link rel="preconnect" href="https://use.typekit.net" crossorigin="" />
+          <link rel="preconnect" href="https://p.typekit.net" crossorigin="" />
+          <script is:inline define:vars={{ typekitId }}>
+          /* eslint-disable */
+            ;(function (d) {
+              var config = { kitId: typekitId, scriptTimeout: 3000, async: true },
+              h = d.documentElement,
+              t = setTimeout(function () {
+                h.className = h.className.replace(/\bwf-loading\b/g, '') + ' wf-inactive'
+              }, config.scriptTimeout),
+              tk = d.createElement('script'),
+              f = false,
+              s = d.getElementsByTagName('script')[0],
+              a
+              h.className += ' wf-loading'
+              tk.src = 'https://use.typekit.net/' + config.kitId + '.js'
+              tk.async = true
+              tk.onload = tk.onreadystatechange = function () {
+              a = this.readyState
+              if (f || (a && a != 'complete' && a != 'loaded')) return
+              f = true
+              clearTimeout(t)
+              try {
+                Typekit.load(config)
+              } catch (e) {}
+              }
+              s.parentNode.insertBefore(tk, s)
+            })(document)
+            /* eslint-enable */
+          </script>
         </>
       )
     }
 
+    <ClientRouter fallback="none" />
     <title>{title}</title>
   </head>
 
   <body>
-    <ClientRouter fallback="animate" />
-    <div id="page-transition-overlay"></div>
-
     <!-- @header -->
     <Header />
     <!-- @@header -->
@@ -114,6 +112,18 @@ import Footer from '@/components/Footer.astro'
     <!-- @footer -->
     <Footer />
     <!-- @@footer -->
+
+    <!-- @page transtion -->
+    <div data-transition-screen>
+      <div data-transition-inner></div>
+    </div>
+    <!-- @@page transition -->
+
+    <!-- @custom scrollbar -->
+    <div class="c-scrollbar" data-scrollbar>
+      <div class="c-scrollbar_thumb" data-scrollbar-thumb></div>
+    </div>
+    <!-- @@custom scrollbar -->
 
     <!-- @script -->
     <script>
