@@ -2,11 +2,66 @@ import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
-//* ==================== INIT LENIS ====================
-export let lenis
+export let lenis = null
 gsap.registerPlugin(ScrollTrigger)
 
-const initLenis = () => {
+let _preventResizeObserver = null
+let _scrollTimer = null
+let _scrollbarEl = null
+let _scrollbarThumb = null
+let _onceBound = false
+
+const initScrollbar = () => {
+  if (_onceBound) return
+
+  _scrollbarEl = document.querySelector('[data-scrollbar]')
+  _scrollbarThumb = document.querySelector('[data-scrollbar-thumb]')
+  if (!_scrollbarEl || !_scrollbarThumb) return
+
+  _onceBound = true
+
+  const updateThumbSize = () => {
+    const ratio = window.innerHeight / document.body.scrollHeight
+    _scrollbarThumb.style.height = Math.max(ratio * window.innerHeight, 44) + 'px'
+  }
+  updateThumbSize()
+  new ResizeObserver(updateThumbSize).observe(document.body)
+
+  // -- drag thumb to scroll
+  let isDragging = false
+  let dragStartY = 0
+  let dragStartScroll = 0
+
+  _scrollbarThumb.addEventListener('mousedown', (e) => {
+    isDragging = true
+    dragStartY = e.clientY
+    dragStartScroll = lenis?.scroll ?? 0
+    document.body.classList.add('is-dragging')
+    e.preventDefault()
+  })
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging || !lenis) return
+    const trackH = _scrollbarEl.clientHeight
+    const thumbH = _scrollbarThumb.clientHeight
+    const ratio = (e.clientY - dragStartY) / (trackH - thumbH)
+    const maxScroll = document.body.scrollHeight - window.innerHeight
+    lenis.scrollTo(dragStartScroll + ratio * maxScroll, { immediate: true })
+  })
+
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return
+    isDragging = false
+    document.body.classList.remove('is-dragging')
+  })
+
+  // -- drive lenis from gsap's ticker; registered once, always reads whichever
+  // -- instance `lenis` currently points to
+  gsap.ticker.add((time) => lenis?.raf(time * 1000))
+  gsap.ticker.lagSmoothing(0)
+}
+
+export const initLenis = () => {
   if (lenis) lenis.destroy()
 
   lenis = new Lenis({
@@ -25,8 +80,11 @@ const initLenis = () => {
     })
   }
   syncLenisPrevent()
-  const ro = new ResizeObserver(syncLenisPrevent)
-  lenisPreventEls.forEach((el) => ro.observe(el))
+
+  // -- disconnect the previous page's observer before watching the new elements
+  _preventResizeObserver?.disconnect()
+  _preventResizeObserver = new ResizeObserver(syncLenisPrevent)
+  lenisPreventEls.forEach((el) => _preventResizeObserver.observe(el))
 
   const setupBoundaryScroll = (el) => {
     el.addEventListener(
@@ -51,80 +109,38 @@ const initLenis = () => {
   }
   lenisPreventEls.forEach(setupBoundaryScroll)
 
-  // -- custom scrollbar
-  const scrollbarEl = document.querySelector('[data-scrollbar]')
-  const scrollBarThumb = document.querySelector('[data-scrollbar-thumb]')
-
-  const updateThumb = () => {
-    const ratio = window.innerHeight / document.body.scrollHeight
-    scrollBarThumb.style.height = Math.max(ratio * window.innerHeight, 44) + 'px'
-  }
-
-  updateThumb()
-  new ResizeObserver(updateThumb).observe(document.body)
-
-  // -- show/hide scroll activity
-  let scrollTimer = null
+  // -- custom scrollbar: binds drag/ticker listeners on the first call only
+  initScrollbar()
 
   lenis.on('scroll', ({ scroll, limit }) => {
-    const progress = scroll / limit
-    const trackH = scrollbarEl.clientHeight
-    const thumbH = scrollBarThumb.clientHeight
-    scrollBarThumb.style.top = progress * (trackH - thumbH) + 'px'
+    if (_scrollbarEl && _scrollbarThumb) {
+      const progress = scroll / limit
+      const trackH = _scrollbarEl.clientHeight
+      const thumbH = _scrollbarThumb.clientHeight
+      _scrollbarThumb.style.top = progress * (trackH - thumbH) + 'px'
+    }
 
     // -- show when scroll, hide after 1s when stop
     document.body.classList.add('is-scrolling')
-    clearTimeout(scrollTimer)
-    scrollTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 1000)
-  })
-
-  // -- drag thumb to scroll
-  let isDragging = false
-  let dragStartY = 0
-  let dragStartScroll = 0
-
-  scrollBarThumb.addEventListener('mousedown', (e) => {
-    isDragging = true
-    dragStartY = e.clientY
-    dragStartScroll = lenis.scroll
-    document.body.classList.add('is-dragging')
-    e.preventDefault()
-  })
-
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return
-    const trackH = scrollbarEl.clientHeight
-    const thumbH = scrollBarThumb.clientHeight
-    const ratio = (e.clientY - dragStartY) / (trackH - thumbH)
-    const maxScroll = document.body.scrollHeight - window.innerHeight
-    lenis.scrollTo(dragStartScroll + ratio * maxScroll, { immediate: true })
-  })
-
-  document.addEventListener('mouseup', () => {
-    if (!isDragging) return
-    isDragging = false
-    document.body.classList.remove('is-dragging')
+    clearTimeout(_scrollTimer)
+    _scrollTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 1000)
   })
 
   lenis.on('scroll', ScrollTrigger.update)
-  gsap.ticker.add((time) => lenis.raf(time * 1000))
-  gsap.ticker.lagSmoothing(0)
 
   return lenis
 }
 
-const stopScroll = () => {
+export const stopScroll = () => {
   if (lenis) {
     lenis.stop()
     document.body.style.overflow = 'hidden'
   }
 }
 
-const startScroll = () => {
+export const startScroll = () => {
   if (lenis) {
     lenis.start()
     document.body.style.overflow = ''
   }
 }
-
-export { initLenis, stopScroll, startScroll }

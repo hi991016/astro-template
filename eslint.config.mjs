@@ -30,7 +30,7 @@ export default tseslint.config(
     },
     rules: {
       'no-console': 'off',
-      'no-unused-vars': 'off', // handled by @typescript-eslint/no-unused-vars
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'warn'
     }
   },

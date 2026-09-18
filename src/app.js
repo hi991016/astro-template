@@ -1,4 +1,5 @@
 import LazyLoad from 'vanilla-lazyload'
+
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -8,7 +9,7 @@ import {
   pageTransitionOut,
   resetTransitionScreen
 } from '@/modules/pageTransition'
-import { initLenis, stopScroll, startScroll } from '@/modules/customLenis'
+import { lenis, initLenis, stopScroll, startScroll } from '@/modules/customLenis'
 
 //* ==================== CONFIGURATION ====================
 const mw = 1024
@@ -20,10 +21,12 @@ const CONFIG = {
 gsap.registerPlugin(ScrollTrigger)
 
 let _ll = null
-let _lenis = null
 let _pendingHash = null
 let _resizeRaf = null
 let _isFirstLoad = true
+
+//* ==================== LAZY LOAD ====================
+_ll = new LazyLoad({ threshold: 300, elements_selector: '.lazy' })
 
 //* ==================== FONT LOADING ====================
 const waitForFonts = (hardTimeout = 3000) =>
@@ -40,9 +43,6 @@ const waitForFonts = (hardTimeout = 3000) =>
     observer.observe(html, { attributes: true, attributeFilter: ['class'] })
     setTimeout(done, hardTimeout)
   })
-
-//* ==================== LAZY LOAD ====================
-_ll = new LazyLoad({ threshold: 0, elements_selector: '.lazy' })
 
 //* ==================== APP HEIGHT ====================
 const initAppHeight = () => {
@@ -72,8 +72,8 @@ const scrollToHash = (hash) => {
   setTimeout(() => {
     try {
       const target = document.querySelector(hash)
-      if (target && _lenis) {
-        _lenis.scrollTo(target, { offset: 0, duration: 1.2, immediate: false })
+      if (target && lenis) {
+        lenis.scrollTo(target, { offset: 0, duration: 1.2, immediate: false })
       }
     } catch (e) {
       console.warn('[astro] hash scroll failed:', hash, e)
@@ -87,18 +87,12 @@ const scrollToHash = (hash) => {
 const destroyAll = () => {
   // -- destroy gsap / observers / libraries
   // destroyFadeTitles()
-  // destroyRecipeSvg()
 
-  // -- reset scrollTrigger / lenis
+  // -- reset scrollTrigger
   ScrollTrigger.getAll().forEach((t) => t.kill())
   ScrollTrigger.clearScrollMemory()
 
-  if (_lenis) {
-    _lenis.destroy()
-    _lenis = null
-  }
-
-  // -- abort all AbortController: remove all listeners by attaching { signal }
+  // -- remove all listeners by attaching { signal }
   // _menuController?.abort()
 
   // -- reset refs
@@ -108,7 +102,7 @@ const destroyAll = () => {
 //* ==================== INIT SCRIPTS ====================
 const initScripts = () => {
   _ll?.update()
-  _lenis = initLenis()
+  initLenis()
   initAppHeight()
   initHeader()
   initMenu()
@@ -129,7 +123,7 @@ const initScripts = () => {
  *                            → ScrollTrigger.refresh() → scrollToHash
  */
 
-//? --- BEFORE FETCHING A NEW PAGE -----------------------------------
+//? --- BEFORE FETCHING A NEW PAGE
 document.addEventListener('astro:before-preparation', (event) => {
   // -- get pending hash, ex: #about
   const href = event.to?.href ?? ''
@@ -150,14 +144,14 @@ document.addEventListener('astro:before-preparation', (event) => {
   }
 })
 
-//? --- BEFORE SWAPING THE DOM -----------------------------------
+//? --- BEFORE SWAPING THE DOM
 document.addEventListener('astro:before-swap', () => {
   if (_isFirstLoad) return
   destroyAll()
   window.scrollTo({ top: 0, behavior: 'instant' })
 })
 
-//? --- AFTER SWAP DOM (NEW DOM IS NOW AVAILABLE) -----------------------------------
+//? --- AFTER SWAP DOM
 document.addEventListener('astro:after-swap', () => {
   if (_isFirstLoad) return
   // -- reinit all scripts with the new DOM
@@ -165,7 +159,7 @@ document.addEventListener('astro:after-swap', () => {
   initScripts()
 })
 
-//? --- PAGE IS COMPLETELY READY -----------------------------------
+//? --- PAGE IS COMPLETELY READY
 document.addEventListener('astro:page-load', async () => {
   if (_isFirstLoad) {
     _isFirstLoad = false
@@ -188,7 +182,7 @@ document.addEventListener('astro:page-load', async () => {
   if (_pendingHash) scrollToHash(_pendingHash)
 })
 
-//? --- BFCACHE RESTORE (back/forward cache) -----------------------------------
+//? --- BACK/FORWARD CACHE RESTORE
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) resetTransitionScreen({ visible: false })
 })
