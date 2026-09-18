@@ -1,7 +1,13 @@
 import LazyLoad from 'vanilla-lazyload'
 import gsap from 'gsap'
-import { CustomEase } from 'gsap/CustomEase'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+// MODULES
+import {
+  pageTransitionIn,
+  pageTransitionOut,
+  resetTransitionScreen
+} from '@/modules/pageTransition'
 import { initLenis, stopScroll, startScroll } from '@/modules/customLenis'
 
 //* ==================== CONFIGURATION ====================
@@ -11,12 +17,12 @@ const CONFIG = {
 }
 
 //* ==================== UTILITIES ====================
-gsap.registerPlugin(ScrollTrigger, CustomEase)
-CustomEase.create('page-transition', '0.76, 0, 0.24, 1')
+gsap.registerPlugin(ScrollTrigger)
 
 let _ll = null
 let _lenis = null
 let _pendingHash = null
+let _resizeRaf = null
 let _isFirstLoad = true
 
 //* ==================== FONT LOADING ====================
@@ -41,9 +47,9 @@ _ll = new LazyLoad({ threshold: 0, elements_selector: '.lazy' })
 //* ==================== APP HEIGHT ====================
 const initAppHeight = () => {
   const doc = document.documentElement
-  const menuH = Math.max(doc.clientHeight, window.innerHeight || 0)
 
   if (CONFIG.isMobile.matches) {
+    const menuH = Math.max(doc.clientHeight, window.innerHeight || 0)
     doc.style.setProperty('--app-height', `${doc.clientHeight}px`)
     doc.style.setProperty('--menu-height', `${menuH}px`)
   } else {
@@ -51,47 +57,15 @@ const initAppHeight = () => {
     doc.style.removeProperty('--menu-height')
   }
 }
-window.addEventListener('resize', initAppHeight)
 
-//* ==================== INIT HEADER ====================
+window.addEventListener('resize', () => {
+  cancelAnimationFrame(_resizeRaf)
+  _resizeRaf = requestAnimationFrame(initAppHeight)
+})
+
+//* ==================== INIT HEADER / MENU ====================
 const initHeader = () => {}
-
-//* ==================== INIT MENU ====================
 const initMenu = () => {}
-
-//* ==================== TRANSITION SCREEN ====================
-const getScreen = () => document.querySelector('[data-transition-screen]')
-const getInner = () => document.querySelector('[data-transition-inner]')
-
-const pageTransitionIn = () =>
-  new Promise((resolve) => {
-    const screen = getScreen()
-    const inner = getInner()
-    const tl = gsap.timeline({ onComplete: resolve })
-
-    screen.classList.add('is-blocking')
-    tl.call(() => stopScroll(), null, 0)
-    tl.set(screen, { yPercent: 0 }, 0)
-    tl.set(inner, { yPercent: 100 }, 0)
-    tl.to(inner, { yPercent: 0, duration: 0.9, ease: 'page-transition' }, 0)
-  })
-
-const pageTransitionOut = () =>
-  new Promise((resolve) => {
-    const screen = getScreen()
-    const inner = getInner()
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        screen.classList.remove('is-blocking')
-        gsap.set(screen, { yPercent: 0 })
-        gsap.set(inner, { yPercent: 100 })
-        startScroll()
-        resolve()
-      }
-    })
-    tl.to(screen, { yPercent: -100, duration: 1, ease: 'page-transition' }, 0)
-  })
 
 //* ==================== HASH SCROLL ====================
 const scrollToHash = (hash) => {
@@ -112,8 +86,6 @@ const scrollToHash = (hash) => {
 //* ==================== DESTROY ALL ====================
 const destroyAll = () => {
   // -- destroy gsap / observers / libraries
-  // destroyMarquee()
-  // destroyBgVideo()
   // destroyFadeTitles()
   // destroyRecipeSvg()
 
@@ -128,8 +100,6 @@ const destroyAll = () => {
 
   // -- abort all AbortController: remove all listeners by attaching { signal }
   // _menuController?.abort()
-  // _popupController?.abort()
-  // _tabsController?.abort()
 
   // -- reset refs
   // _menuController = _popupController = _tabsController = null
@@ -149,17 +119,17 @@ const initScripts = () => {
  * flowchart:
  *
  * [FIRST LOAD]
- *   astro:page-load → initAll() + waitForFonts + preloadVideos → pageTransitionOut()
+ *   astro:page-load → initScripts() + waitForFonts → pageTransitionOut()
  *
  * [NAVIGATE]
- *   astro:before-preparation → pageTransitionIn() in parallel with fetching a new page
+ *   astro:before-preparation → pageTransitionIn()
  *   astro:before-swap        → destroyAll()
- *   astro:after-swap         → initAll() (new DOM is available, overlay is true)
+ *   astro:after-swap         → initScripts() (new DOM is available, overlay is true)
  *   astro:page-load          → preloadVideos → initBgVideo → pageTransitionOut()
- *                              → ScrollTrigger.refresh() → scrollToHash
+ *                            → ScrollTrigger.refresh() → scrollToHash
  */
 
-//? ─── BEFORE FETCHING A NEW PAGE ─────────────────────────────────────────────
+//? --- BEFORE FETCHING A NEW PAGE -----------------------------------
 document.addEventListener('astro:before-preparation', (event) => {
   // -- get pending hash, ex: #about
   const href = event.to?.href ?? ''
@@ -173,21 +143,21 @@ document.addEventListener('astro:before-preparation', (event) => {
   const originalLoader = event.loader
   event.loader = async () => {
     await Promise.all([
-      pageTransitionIn(), // animation overlay
+      pageTransitionIn(stopScroll), // animation overlay
       originalLoader() // fetch HTML for the next page
     ])
     // -- is here: overlay is covered + HTML has been fetched → ready to swap
   }
 })
 
-//? ─── BEFORE SWAPING THE DOM ────────────────────────────────────────────────────
+//? --- BEFORE SWAPING THE DOM -----------------------------------
 document.addEventListener('astro:before-swap', () => {
   if (_isFirstLoad) return
   destroyAll()
   window.scrollTo({ top: 0, behavior: 'instant' })
 })
 
-//? ─── AFTER SWAP DOM (NEW DOM IS NOW AVAILABLE) ─────────────────────────────────
+//? --- AFTER SWAP DOM (NEW DOM IS NOW AVAILABLE) -----------------------------------
 document.addEventListener('astro:after-swap', () => {
   if (_isFirstLoad) return
   // -- reinit all scripts with the new DOM
@@ -195,38 +165,30 @@ document.addEventListener('astro:after-swap', () => {
   initScripts()
 })
 
-//? ─── PAGE IS COMPLETELY READY ──────────────────────────────────────────────
+//? --- PAGE IS COMPLETELY READY -----------------------------------
 document.addEventListener('astro:page-load', async () => {
   if (_isFirstLoad) {
     _isFirstLoad = false
 
     // -- init transition screen in hidden state (CSS default to hiddng it)
-    const screen = getScreen()
-    const inner = getInner()
-    if (screen) gsap.set(screen, { yPercent: 0 })
-    if (inner) gsap.set(inner, { yPercent: 0 })
+    resetTransitionScreen({ visible: true })
 
     initScripts()
     stopScroll()
 
     // -- wait for the font and video to preload before pageTransitionOut
-    await Promise.all([waitForFonts()])
-    await pageTransitionOut()
+    // await Promise.all([waitForFonts()])
+    await pageTransitionOut(startScroll)
     return
   }
 
-  await pageTransitionOut()
+  await pageTransitionOut(startScroll)
 
   ScrollTrigger.refresh()
   if (_pendingHash) scrollToHash(_pendingHash)
 })
 
-//? ─── BFCACHE RESTORE (back/forward cache) ──────────────────────────────────
+//? --- BFCACHE RESTORE (back/forward cache) -----------------------------------
 window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    const screen = getScreen()
-    const inner = getInner()
-    if (screen) gsap.set(screen, { yPercent: 0 })
-    if (inner) gsap.set(inner, { yPercent: 100 })
-  }
+  if (event.persisted) resetTransitionScreen({ visible: false })
 })
