@@ -1,0 +1,15 @@
+---
+// ===== SCREEN TRANSITION =====
+// -- covers the page by default (css), so the first load is hidden until its intro plays
+// -- persisted: the screen keeps its gsap state while the page is swapped under it
+---
+
+<div
+  class="t-screen"
+  data-transition-screen
+  transition:persist="transition"
+  transition:name="transition"
+  transition:animate="none"
+>
+  <div class="t-screen_inner" data-transition-inner></div>
+</div>

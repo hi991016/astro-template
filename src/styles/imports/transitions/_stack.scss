@@ -1,0 +1,41 @@
+/* Transition: stack
+------------------------------------------------------------*/
+// -- native view transition: timing in src/transitions/index.ts, keyframes here.
+// -- the next page slides up from the bottom and stacks over the current one,
+// -- which shrinks, lifts and dims over a dark background
+@use '@/styles/imports/core/mixins' as *;
+
+:root {
+  --stack-dark-cl: #111;
+}
+
+:root[data-transition='stack'] {
+  // -- dark color behind the leaving page while it shrinks
+  &::view-transition {
+    background: var(--stack-dark-cl);
+  }
+
+  // -- the new page covers the old one, no cross-fade
+  &::view-transition-old(root),
+  &::view-transition-new(root) {
+    mix-blend-mode: normal;
+  }
+
+  // -- scale from the top of the screen
+  &::view-transition-old(root) {
+    transform-origin: 50% 0;
+  }
+}
+
+@keyframes stack-old {
+  to {
+    opacity: 0.1;
+    transform: translateY(-20svh) scale(0.94);
+  }
+}
+
+@keyframes stack-new {
+  from {
+    transform: translateY(100svh);
+  }
+}

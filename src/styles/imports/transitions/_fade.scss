@@ -1,0 +1,19 @@
+/* Transition: fade
+------------------------------------------------------------*/
+@use '@/styles/imports/core/mixins' as *;
+
+:root {
+  // -- the color the page fades through, the page background by default
+  --fade-cl: black;
+}
+
+// -- covers the page, stays under the header (z-index 50) so the header never blinks
+.t-fade {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--fade-cl);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}

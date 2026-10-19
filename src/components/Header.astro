@@ -1,5 +1,41 @@
 ---
 // ===== HEADER COMPONENT =====
+const links = [
+  { href: '/', label: 'Home' },
+  { href: '/works/', label: 'Works' },
+  { href: '/about/', label: 'About' },
+  { href: '/contact/', label: 'Contact' }
+]
+
+// -- "/about" and "/about/" are the same page
+const pathOf = (href: string) => href.replace(/(.)\/$/, '$1')
+const here = pathOf(Astro.url.pathname)
+
+// -- own view transition name: stays still on top while the page animates under it
 ---
 
-<header class="c-header">header</header>
+<header
+  class:list={['c-header', { 'is-home': here === '/' }]}
+  transition:name="header"
+  transition:animate="none"
+>
+  <div class="c-header_inner">
+    <a href="/" class="c-header_logo">logo</a>
+    <nav class="c-header_nav">
+      {
+        links.map(({ href, label }) => {
+          const current = pathOf(href) === here
+          return (
+            <a
+              href={href}
+              class:list={['c-header_link', { 'is-current': current }]}
+              aria-current={current ? 'page' : undefined}
+            >
+              {label}
+            </a>
+          )
+        })
+      }
+    </nav>
+  </div>
+</header>

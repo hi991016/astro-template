@@ -1,0 +1,21 @@
+---
+// ===== CURVE TRANSITION =====
+// -- persisted: the panel keeps its gsap state while the page is swapped under it
+---
+
+<div
+  class="t-curve"
+  data-curve
+  transition:persist="transition"
+  transition:name="transition"
+  transition:animate="none"
+>
+  <div class="t-curve_panel" data-curve-panel>
+    <div class="t-curve_panel-top" data-curve-panel-top>
+      <div class="t-curve_circle"></div>
+    </div>
+    <div class="t-curve_panel-bottom" data-curve-panel-bottom>
+      <div class="t-curve_circle"></div>
+    </div>
+  </div>
+</div>

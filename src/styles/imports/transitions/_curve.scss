@@ -1,0 +1,61 @@
+/* Transition: curve
+------------------------------------------------------------*/
+@use '@/styles/imports/core/mixins' as *;
+
+:root {
+  --curve-bg-cl: #101820;
+}
+
+.t-curve {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  overflow: clip;
+
+  // -- parked just below the viewport, gsap moves it up by yPercent
+  &_panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: var(--curve-bg-cl);
+  }
+
+  // -- the edges are strips glued to the panel, each showing part of a huge ellipse:
+  // -- its top as a dome above the panel, its bottom as a bowl below. gsap scales them on y
+  &_panel-top,
+  &_panel-bottom {
+    position: absolute;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 0;
+    overflow: hidden;
+  }
+
+  &_panel-top {
+    bottom: calc(100% - 1px);
+    transform-origin: bottom;
+  }
+
+  &_panel-bottom {
+    top: calc(100% - 1px);
+    justify-content: flex-end;
+    transform-origin: top;
+  }
+
+  &_circle {
+    position: absolute;
+    width: 125%;
+    height: 500%;
+    border-radius: 50%;
+    background: var(--curve-bg-cl);
+  }
+}

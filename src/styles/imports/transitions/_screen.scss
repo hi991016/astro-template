@@ -1,0 +1,27 @@
+/* Transition: screen
+------------------------------------------------------------*/
+@use '@/styles/imports/core/mixins' as *;
+
+:root {
+  --screen-cl: #000;
+}
+
+// -- covers the page until js reveals it, so the first load stays hidden
+.t-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  overflow: hidden;
+
+  &.is-blocking {
+    pointer-events: auto;
+  }
+
+  &_inner {
+    position: absolute;
+    inset: 0;
+    background: var(--screen-cl);
+    will-change: transform;
+  }
+}

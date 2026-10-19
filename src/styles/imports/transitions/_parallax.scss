@@ -1,0 +1,35 @@
+/* Transition: parallax
+------------------------------------------------------------*/
+// -- native view transition: timing in src/transitions/index.ts, keyframes here.
+// -- the current page drifts up slowly and darkens while the next page slides up over it
+@use '@/styles/imports/core/mixins' as *;
+
+:root {
+  --parallax-dark-cl: #000;
+}
+
+:root[data-transition='parallax'] {
+  // -- the leaving page darkens by fading into this color
+  &::view-transition {
+    background: var(--parallax-dark-cl);
+  }
+
+  // -- the new page covers the old one, no cross-fade
+  &::view-transition-old(root),
+  &::view-transition-new(root) {
+    mix-blend-mode: normal;
+  }
+}
+
+@keyframes parallax-old {
+  to {
+    opacity: 0.2;
+    transform: translateY(-25vh);
+  }
+}
+
+@keyframes parallax-new {
+  from {
+    transform: translateY(100vh);
+  }
+}

@@ -1,6 +1,6 @@
 @charset 'utf-8';
 
-// core 
+// core
 @use 'imports/core/variables';
 @use 'imports/core/mixins';
 @use 'imports/core/reset';
@@ -16,6 +16,13 @@
 
 // pages
 @use 'imports/pages/home';
+
+// transitions: all loaded, only the one set in src/transitions/config.ts is used
+@use 'imports/transitions/stack';
+@use 'imports/transitions/parallax';
+@use 'imports/transitions/curve';
+@use 'imports/transitions/fade';
+@use 'imports/transitions/screen';
 
 // utils
 @use 'imports/core/utils';

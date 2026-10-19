@@ -9,10 +9,29 @@ let _preventResizeObserver = null
 let _scrollTimer = null
 let _scrollbarEl = null
 let _scrollbarThumb = null
+let _thumbTravel = 0
+let _thumbObserver = null
 let _onceBound = false
 
+// -- cache the thumb travel distance so the scroll handler never reads layout
+const updateThumbSize = () => {
+  if (!_scrollbarEl || !_scrollbarThumb) return
+  const ratio = window.innerHeight / document.body.scrollHeight
+  // -- nothing to scroll: no bar, not even on hover
+  _scrollbarEl.hidden = ratio >= 1
+  const thumbH = Math.max(ratio * window.innerHeight, 44)
+  _scrollbarThumb.style.height = thumbH + 'px'
+  _thumbTravel = _scrollbarEl.clientHeight - thumbH
+}
+
 const initScrollbar = () => {
-  if (_onceBound) return
+  // -- astro swaps <body> on every navigation: watch the new one
+  if (_onceBound) {
+    _thumbObserver.disconnect()
+    _thumbObserver.observe(document.body)
+    updateThumbSize()
+    return
+  }
 
   _scrollbarEl = document.querySelector('[data-scrollbar]')
   _scrollbarThumb = document.querySelector('[data-scrollbar-thumb]')
@@ -20,12 +39,10 @@ const initScrollbar = () => {
 
   _onceBound = true
 
-  const updateThumbSize = () => {
-    const ratio = window.innerHeight / document.body.scrollHeight
-    _scrollbarThumb.style.height = Math.max(ratio * window.innerHeight, 44) + 'px'
-  }
   updateThumbSize()
-  new ResizeObserver(updateThumbSize).observe(document.body)
+  _thumbObserver = new ResizeObserver(updateThumbSize)
+  _thumbObserver.observe(document.body)
+  window.addEventListener('resize', updateThumbSize)
 
   // -- drag thumb to scroll
   let isDragging = false
@@ -112,13 +129,14 @@ export const initLenis = () => {
   // -- custom scrollbar: binds drag/ticker listeners on the first call only
   initScrollbar()
 
-  lenis.on('scroll', ({ scroll, limit }) => {
-    if (_scrollbarEl && _scrollbarThumb) {
-      const progress = scroll / limit
-      const trackH = _scrollbarEl.clientHeight
-      const thumbH = _scrollbarThumb.clientHeight
-      _scrollbarThumb.style.top = progress * (trackH - thumbH) + 'px'
+  lenis.on('scroll', ({ scroll, limit, isScrolling }) => {
+    if (_scrollbarThumb && limit > 0) {
+      _scrollbarThumb.style.transform = `translateY(${(scroll / limit) * _thumbTravel}px)`
     }
+
+    // -- lenis also emits on stop(), start() and resets (page transitions):
+    // -- only a real scroll on a page that can scroll shows the bar
+    if (!isScrolling || limit <= 0) return
 
     // -- show when scroll, hide after 1s when stop
     document.body.classList.add('is-scrolling')
@@ -143,4 +161,18 @@ export const startScroll = () => {
     lenis.start()
     document.body.style.overflow = ''
   }
+}
+
+// -- smooth scroll to the element a "#hash" points to, false if it is not on the page
+// -- space above the target (e.g. a fixed header) comes from its CSS scroll-margin-top
+export const scrollToHash = (hash) => {
+  const target = hash && document.getElementById(decodeURIComponent(hash.slice(1)))
+  if (!target || !lenis) return false
+
+  lenis.scrollTo(target, {
+    offset: -(parseFloat(getComputedStyle(target).scrollMarginTop) || 0),
+    duration: 1.4,
+    easing: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2)
+  })
+  return true
 }
